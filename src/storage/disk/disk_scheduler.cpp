@@ -49,8 +49,20 @@ void DiskScheduler::StartWorkerThread() {
   // std::cout << "StartWorkerThread" << '\n';
   std::optional<DiskRequest> r;
   while ((r = request_queue_.Get()) != std::nullopt) {
-    std::thread t = std::thread(&DiskScheduler::Process, this, std::move(r.value()));
-    t.join();
+    if (r.has_value()) {
+      DiskRequest request = std::move(r.value());
+      // Process(request);
+      if (request.is_write_) {
+        disk_manager_->WritePage(request.page_id_, request.data_);
+      } else {
+        disk_manager_->ReadPage(request.page_id_, request.data_);
+      }
+      request.callback_.set_value(true);
+    } else {
+      break;
+    }
+    // std::thread t = std::thread(&DiskScheduler::Process, this, std::move(r.value()));
+    // t.join();
   }
 }
 
