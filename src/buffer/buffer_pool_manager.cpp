@@ -39,6 +39,7 @@ BufferPoolManager::BufferPoolManager(size_t pool_size, DiskManager *disk_manager
 BufferPoolManager::~BufferPoolManager() { delete[] pages_; }
 
 auto BufferPoolManager::NewPage(page_id_t *page_id) -> Page * {
+  std::cout << "NewPage:\n";
   Page *page;
   frame_id_t frame_id = -1;
   std::scoped_lock lock(latch_);
@@ -59,6 +60,7 @@ auto BufferPoolManager::NewPage(page_id_t *page_id) -> Page * {
     page->is_dirty_ = false;
   }
   *page_id = AllocatePage();
+  std::cout << *page_id << '\n';
   page_table_.erase(page->GetPageId());
   page_table_.emplace(*page_id, frame_id);
   page->page_id_ = *page_id;
@@ -71,6 +73,7 @@ auto BufferPoolManager::NewPage(page_id_t *page_id) -> Page * {
 }
 
 auto BufferPoolManager::FetchPage(page_id_t page_id, [[maybe_unused]] AccessType access_type) -> Page * {
+  std::cout << "FetchPage" << ' ' << page_id << '\n';
   if (page_id == INVALID_PAGE_ID) {
     return nullptr;
   }
@@ -120,6 +123,7 @@ auto BufferPoolManager::FetchPage(page_id_t page_id, [[maybe_unused]] AccessType
 }
 
 auto BufferPoolManager::UnpinPage(page_id_t page_id, bool is_dirty, [[maybe_unused]] AccessType access_type) -> bool {
+  std::cout << "UnpinPage" << ' ' << page_id << '\n';
   if (page_id == INVALID_PAGE_ID) {
     return false;
   }
@@ -145,11 +149,12 @@ auto BufferPoolManager::UnpinPage(page_id_t page_id, bool is_dirty, [[maybe_unus
 }
 
 auto BufferPoolManager::FlushPage(page_id_t page_id) -> bool {
+  std::cout << "FlushPage" << page_id << '\n';
   if (page_id == INVALID_PAGE_ID) {
     return false;
   }
   std::scoped_lock<std::mutex> lock(latch_);
-  if (page_table_.count(page_id) != 0U) {
+  if (page_table_.count(page_id) == 0) {
     return false;
   }
 
@@ -164,9 +169,10 @@ auto BufferPoolManager::FlushPage(page_id_t page_id) -> bool {
 }
 
 void BufferPoolManager::FlushAllPages() {
+  std::cout << "FlushAllPages\n";
   std::scoped_lock<std::mutex> lock(latch_);
   for (auto &[page_id, frame_id] : page_table_) {
-    auto page = pages_ + page_id;
+    auto page = pages_ + frame_id;
 
     auto promise = disk_scheduler_->CreatePromise();
     auto future = promise.get_future();
@@ -177,6 +183,7 @@ void BufferPoolManager::FlushAllPages() {
 }
 
 auto BufferPoolManager::DeletePage(page_id_t page_id) -> bool {
+  std::cout << "Delete" << ' ' << page_id << '\n';
   if (page_id == INVALID_PAGE_ID) {
     return false;
   }
