@@ -54,6 +54,8 @@ class DiskScheduler {
   explicit DiskScheduler(DiskManager *disk_manager);
   ~DiskScheduler();
 
+  void Process(DiskRequest r);
+
   /**
    * TODO(P1): Add implementation
    *

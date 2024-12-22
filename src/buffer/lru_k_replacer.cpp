@@ -12,19 +12,154 @@
 
 #include "buffer/lru_k_replacer.h"
 #include "common/exception.h"
-
 namespace bustub {
 
 LRUKReplacer::LRUKReplacer(size_t num_frames, size_t k) : replacer_size_(num_frames), k_(k) {}
 
-auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool { return false; }
+auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
+  // printf("lru_replacer.Evict(&value);\n");
+  std::lock_guard<std::mutex> lock(latch_);
 
-void LRUKReplacer::RecordAccess(frame_id_t frame_id, [[maybe_unused]] AccessType access_type) {}
+  if (!ppriority_evict_.empty()) {
+    auto [time, id] = *ppriority_evict_.begin();
+    ppriority_evict_.erase(ppriority_evict_.begin());
+    *frame_id = id;
+    auto &node = node_store_[id];
+    node.Erase();
 
-void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {}
+    // std::cout << *frame_id << '\n';
+    return true;
+  }
+  if (!priority_evict_.empty()) {
+    auto [distance, id] = *priority_evict_.begin();
+    priority_evict_.erase(priority_evict_.begin());
+    *frame_id = id;
+    auto &node = node_store_[id];
+    node.Erase();
+    // std::cout << *frame_id << '\n';
+    return true;
+  }
 
-void LRUKReplacer::Remove(frame_id_t frame_id) {}
+  return false;
+}
 
-auto LRUKReplacer::Size() -> size_t { return 0; }
+void LRUKReplacer::DeleteLast(size_t frame_id) {
+  // delete last
+  auto node = node_store_[frame_id];
+  size_t last = node.GetLast();
+  size_t count = node.GetCnt();
+  if (last != 0) {
+    if (count < k_) {
+      auto it = ppriority_evict_.find(last);
+      ppriority_evict_.erase(it);
+    } else if (count == k_) {
+      auto it = priority_evict_.find(last);
+      priority_evict_.erase(it);
+    }
+  }
+};
+
+void LRUKReplacer::AddNewOne(size_t frame_id) {
+  auto node = node_store_[frame_id];
+  size_t last = node.GetLast();
+  size_t count = node.GetCnt();
+  if (count < k_) {
+    ppriority_evict_[last] = frame_id;
+  } else {
+    priority_evict_[last] = frame_id;
+  }
+}
+
+void LRUKReplacer::RecordAccess(frame_id_t frame_id, AccessType access_type) {
+  // printf("lru_replacer.RecordAccess(%d);\n", frame_id);
+  std::lock_guard<std::mutex> guard(latch_);
+  current_timestamp_++;
+  if (node_store_.count(frame_id) == 0) {
+    LRUKNode node(k_, frame_id);
+    node_store_.emplace(frame_id, node);
+  }
+  auto &node = node_store_[frame_id];
+
+  auto flag = node.CheckEvictable();
+
+  if (flag) {
+    DeleteLast(frame_id);
+  }
+  // add new one
+  node.RecordAccess(current_timestamp_);
+  node.SetLast(node.GetDistance());
+  node.SetCnt(node.GetCnt() + 1);
+  //   last_[frame_id] = node.GetDistance();
+  //   count_[frame_id]++;
+  if (flag) {
+    AddNewOne(frame_id);
+  }
+}
+
+void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
+  // printf("lru_replacer.SetEvictable(%d, %d);\n", frame_id, set_evictable);
+  std::lock_guard<std::mutex> guard(latch_);
+  if (0U == node_store_.count(frame_id)) {
+    // perror("SetEvictable\n");
+    return;
+  }
+
+  auto &node = node_store_[frame_id];
+  if (node.CheckEvictable() == set_evictable) {
+    return;
+  }
+  if (node.CheckEvictable()) {
+    DeleteLast(frame_id);
+  }
+  node_store_[frame_id].SetEvictable(set_evictable);
+  //   curr_size_ += ret;
+  if (node.CheckEvictable()) {
+    AddNewOne(frame_id);
+  }
+  // std::cout << ppriority_evict_.size() << ' ' << priority_evict_.size() << '\n';
+}
+
+void LRUKReplacer::Remove(frame_id_t frame_id) {
+  std::lock_guard<std::mutex> guard(latch_);
+  if (node_store_.count(frame_id) == 0U) {
+    perror("Remove\n");
+    return;
+  }
+  auto node = node_store_[frame_id];
+  node.Erase();
+  if (node.CheckEvictable()) {
+    DeleteLast(frame_id);
+  }
+}
+
+auto LRUKReplacer::Size() -> size_t {
+  curr_size_ = ppriority_evict_.size() + priority_evict_.size();
+  // printf("lru_replacer.Size(): %ld\n", curr_size_);
+  return curr_size_;
+}
 
 }  // namespace bustub
+
+auto bustub::LRUKNode::RecordAccess(size_t current_timestamp_) -> size_t {
+  history_.push_back(current_timestamp_);
+  if (history_.size() > k_) {
+    history_.pop_front();
+  }
+  return GetDistance();
+}
+
+auto bustub::LRUKNode::GetDistance() -> size_t { return history_.front(); }
+
+void bustub::LRUKNode::SetEvictable(bool set_evictable_) { is_evictable_ = set_evictable_; }
+
+void bustub::LRUKNode::Erase() {
+  cnt_ = 0;
+  last_ = 0;
+  history_.clear();
+}
+
+auto bustub::LRUKNode::GetCnt() -> size_t { return cnt_; }
+auto bustub::LRUKNode::GetLast() -> size_t { return last_; }
+void bustub::LRUKNode::SetLast(size_t last) { last_ = last; }
+void bustub::LRUKNode::SetCnt(size_t cnt) { cnt_ = cnt; }
+auto bustub::LRUKNode::CheckEvictable() -> bool { return is_evictable_; }
