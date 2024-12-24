@@ -15,11 +15,11 @@
 namespace bustub {
 
 LRUKReplacer::LRUKReplacer(size_t num_frames, size_t k) : replacer_size_(num_frames), k_(k) {
-  std::cout << "LRUKReplacer:" << num_frames << ' ' << k << '\n';
+  // std::cout << "LRUKReplacer:" << num_frames << ' ' << k << '\n';
 }
 
 auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
-  std::cout << "lru_replacer.Evict( ";
+  // std::cout << "lru_replacer.Evict( ";
   std::lock_guard<std::mutex> lock(latch_);
 
   if (!ppriority_evict_.empty()) {
@@ -29,7 +29,7 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
     auto &node = node_store_[id];
     node.Erase();
 
-    std::cout << *frame_id << '\n';
+    // std::cout << *frame_id << '\n';
     return true;
   }
   if (!priority_evict_.empty()) {
@@ -38,7 +38,7 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
     *frame_id = id;
     auto &node = node_store_[id];
     node.Erase();
-    std::cout << *frame_id << '\n';
+    // std::cout << *frame_id << '\n';
     return true;
   }
 
@@ -75,7 +75,7 @@ void LRUKReplacer::AddNewOne(size_t frame_id) {
 }
 
 void LRUKReplacer::RecordAccess(frame_id_t frame_id, AccessType access_type) {
-  std::cout << "lru_replacer.RecordAccess( " << frame_id << " );\n";
+  // std::cout << "lru_replacer.RecordAccess( " << frame_id << " );\n";
 
   if (static_cast<size_t>(frame_id) > replacer_size_) {
     throw Exception("LRUKReplacer::RecordAccess: frame_id is invalid");
@@ -106,7 +106,7 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id, AccessType access_type) {
 }
 
 void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
-  std::cout << "lru_replacer.SetEvictable(" << frame_id << ' ' << set_evictable << " );\n";
+  // std::cout << "lru_replacer.SetEvictable(" << frame_id << ' ' << set_evictable << " );\n";
   std::lock_guard<std::mutex> guard(latch_);
   if (0U == node_store_.count(frame_id)) {
     return;
@@ -136,7 +136,7 @@ void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
 }
 
 void LRUKReplacer::Remove(frame_id_t frame_id) {
-  std::cout << "Remove" << ' ' << frame_id << '\n';
+  // std::cout << "Remove" << ' ' << frame_id << '\n';
   std::lock_guard<std::mutex> guard(latch_);
   if (node_store_.count(frame_id) == 0U) {
     return;
@@ -152,7 +152,7 @@ void LRUKReplacer::Remove(frame_id_t frame_id) {
 
 auto LRUKReplacer::Size() -> size_t {
   curr_size_ = ppriority_evict_.size() + priority_evict_.size();
-  std::cout << "size():" << ppriority_evict_.size() << ' ' << priority_evict_.size() << '\n';
+  // std::cout << "size():" << ppriority_evict_.size() << ' ' << priority_evict_.size() << '\n';
   // printf("lru_replacer.Size(): %ld\n", curr_size_);
   return curr_size_;
 }
