@@ -28,6 +28,6 @@ void ExtendibleHTableHeaderPage::SetDirectoryPageId(uint32_t directory_idx, page
   throw NotImplementedException("ExtendibleHTableHeaderPage is not implemented");
 }
 
-auto ExtendibleHTableHeaderPage::MaxSize() const -> uint32_t { return 0; }
+auto ExtendibleHTableHeaderPage::MaxSize() const -> uint32_t { return (1 << max_depth_); }
 
 }  // namespace bustub
