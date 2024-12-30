@@ -76,7 +76,12 @@ def check(arguments, source_dir):
                 formatted = subprocess.check_output(
                     [arguments.clang_format_binary,
                      filename])
-                formatted = codecs.decode(formatted, "utf-8")
+                try:
+                    formatted = codecs.decode(formatted, "utf-8")
+                except UnicodeDecodeError as e:
+                    print(f"UnicodeDecodeError in file: {source_dir}, error: {e}")
+                    raise
+                # formatted = codecs.decode(formatted, "utf-8")
                 # Read the original file
                 original = codecs.decode(reader.read(), "utf-8")
                 # Run the equivalent of diff -u

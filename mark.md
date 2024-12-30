@@ -57,10 +57,23 @@ my_map[1] = "value";
   * 它是一个简单的类模板，通常在编译时会被优化为零开销。
 
 # p2 2024.12.24 ~
-实现一个可扩展哈希
-
+实现一个可扩展哈希, 要求实现线程安全的查询、写入、删除。
 
 ## task1
 了解移动语义，实现一个PageGuard类，他是对page的包装，在NewPageGuarded的时候进行读/写锁，在析构函数时自动解锁。  
 
+## task2
+### hash
+hash的高max_depth_位为directoryIndex, 低local_depth_为BucketIndex. global_depth_同样是低位且global_depth大于local_depth恒成立, 所以多个hash会映射到同一个bucket. 
 
+### Header Page
+该部分的max depth固定，主要是用来索引能够索引到存储key的BucketPage位置的Directory Page在Header Page中的位置。索引通过 HashToDirecotryIndex实现
+优点：便于扩展，便于并发读写。
+
+### Directory Page
+global_depth: 前global_dp作为在directory中的索引,当bucket满时, 通过比较global_depth和local_depth来split  
+local_depth: 通过与global_depth比较判断当前bucket的指针数量  
+
+### GetSplitImageIndex 
+* 假设Bucket的local\_depth：2，bucket\_idx：01 
+* 分裂成两个Bucket后：old\_bucket\_idx：001 new\_bucket\_idx：101

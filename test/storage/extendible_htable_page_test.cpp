@@ -80,6 +80,7 @@ TEST(ExtendibleHTableTest, BucketPageSampleTest) {
         index_key.SetFromInteger(i);
         ASSERT_TRUE(bucket_page->Remove(index_key, comparator));
       }
+      std::cout << bucket_page->Size() << '\n';
     }
 
     ASSERT_TRUE(bucket_page->IsEmpty());
@@ -87,7 +88,7 @@ TEST(ExtendibleHTableTest, BucketPageSampleTest) {
 }
 
 // NOLINTNEXTLINE
-TEST(ExtendibleHTableTest, DISABLED_HeaderDirectoryPageSampleTest) {
+TEST(ExtendibleHTableTest, HeaderDirectoryPageSampleTest) {
   auto disk_mgr = std::make_unique<DiskManagerUnlimitedMemory>();
   auto bpm = std::make_unique<BufferPoolManager>(5, disk_mgr.get());
 
@@ -140,7 +141,6 @@ TEST(ExtendibleHTableTest, DISABLED_HeaderDirectoryPageSampleTest) {
     bucket_page_4->Init(10);
 
     directory_page->SetBucketPageId(0, bucket_page_id_1);
-
     /*
     ======== DIRECTORY (global_depth_: 0) ========
     | bucket_idx | page_id | local_depth |

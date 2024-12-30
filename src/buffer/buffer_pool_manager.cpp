@@ -269,7 +269,7 @@ auto BufferPoolManager::FetchPageWrite(page_id_t page_id) -> WritePageGuard {
 }
 
 auto BufferPoolManager::NewPageGuarded(page_id_t *page_id) -> BasicPageGuard {
-  std::cout << "NewPageGuarded:\n";
+  // std::cout << "NewPageGuarded:\n";
   Page *page;
   frame_id_t frame_id = -1;
   std::scoped_lock lock(latch_);
