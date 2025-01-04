@@ -1,3 +1,4 @@
+![alt text](image.png)
 # p1 2024.12.19 ~ 12.22
 
 总的来说,p1要实现一个buffer bool, 它包含三个部分(LRU-K Replacement Policy, Disk Scheduler, Buffer Pool Manager). 
@@ -56,8 +57,28 @@ my_map[1] = "value";
 * **轻量级：**
   * 它是一个简单的类模板，通常在编译时会被优化为零开销。
 
-# p2 2024.12.24 ~
+# p2 2024.12.24 ~ 12.30
 实现一个可扩展哈希, 要求实现线程安全的查询、写入、删除。
+
+可扩展哈希（**Extendible Hashing**）是一种动态哈希技术，用于解决传统哈希表在面对动态数据时可能出现的性能下降问题。它通过调整哈希表的结构，在需要时扩展或者缩小表的大小，从而提供了高效的插入、删除和查找操作。
+
+以下是关于可扩展哈希的关键点：
+
+### 核心思想
+
+1. **基于位划分**：\
+   可扩展哈希利用哈希函数生成的二进制值，对数据进行划分。它根据这些哈希值的前缀来决定数据的存储位置。
+
+2. **目录和桶的分离**：
+
+   * **目录**（Directory）：存储指向桶（Bucket）的指针，每个目录项对应一个桶。
+   * **桶**（Bucket）：实际存储数据的地方。 如果某个桶溢出（装不下更多数据），目录的大小可以扩展，避免频繁重新分配整个哈希表。
+
+3. **动态扩展**：
+
+   * 每个桶有一个**局部深度（Local Depth）**，表示当前桶使用了多少位来区分哈希值。
+   * 目录有一个**全局深度（Global Depth）**，表示目录中当前最多需要的哈希位数。\
+     当桶溢出时，可以选择**分裂桶**，并根据需要扩展目录。
 
 ## task1
 了解移动语义，实现一个PageGuard类，他是对page的包装，在NewPageGuarded的时候进行读/写锁，在析构函数时自动解锁。  
@@ -77,3 +98,26 @@ local_depth: 通过与global_depth比较判断当前bucket的指针数量
 ### GetSplitImageIndex 
 * 假设Bucket的local\_depth：2，bucket\_idx：01 
 * 分裂成两个Bucket后：old\_bucket\_idx：001 new\_bucket\_idx：101
+
+# p3 2025.1.3 ~ 
+
+* Task1：Access Method Executors. 包含 SeqScan、Insert、Delete、IndexScan 四个算子。
+
+* Task2：Aggregation and Join Executors. 包含 Aggregation、NestedLoopJoin、NestedIndexJoin 三个算子。
+
+* Task3：Sort + Limit Executors and Top-N Optimization. 包含 Sort、Limit、TopN 三个算子，以及实现将 Sort + Limit 优化为 TopN 算子。and Top-N Optimization. 包含 Sort、Limit、TopN 三个算子，以及实现将 Sort + Limit 优化为 TopN 算子。
+
+* Leaderboard Task：为 Optimizer 实现新的优化规则，包括 Hash Join、Join Reordering、Filter Push Down、Column Pruning 等等，让三条诡异的 sql 语句执行地越快越好。
+
+## task1
+### Parser 
+一条 sql 语句，首先经过 Parser 生成一棵抽象语法树 AST。Bustub 中采用了 libpg_query 库将 sql 语句 parse 为 AST。
+### Binder
+在得到 AST 后，还需要将这些词语绑定到数据库实体上，这就是 Binder 的工作。例如有这样一条 sql：
+
+```sql
+SELECT colA FROM table1;
+```
+
+其中 `SELECT` 和 `FROM` 是关键字，`colA` 和 `table1` 是标识符。Binder 遍历 AST，将这些词语绑定到相应的实体上。实体是 Bustub 可以理解的各种 c++ 类。绑定完成后，得到的结果是一棵 Bustub 可以直接理解的树。把它叫做 Bustub AST。
+

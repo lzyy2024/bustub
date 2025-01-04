@@ -5,7 +5,7 @@ namespace bustub {
 
 BasicPageGuard::BasicPageGuard(BasicPageGuard &&that) noexcept
     : bpm_(that.bpm_), page_(that.page_), is_dirty_(that.is_dirty_) {
-  std::cout << "BasicPageGuard move constructor:\n";
+  // std::cout << "BasicPageGuard move constructor:\n";
   that.bpm_ = nullptr;
   that.page_ = nullptr;
   that.is_dirty_ = false;
@@ -21,7 +21,7 @@ void BasicPageGuard::Drop() {
 }
 
 auto BasicPageGuard::operator=(BasicPageGuard &&that) noexcept -> BasicPageGuard & {
-  std::cout << "BasicPageGuard move assignment operator\n";
+  // std::cout << "BasicPageGuard move assignment operator\n";
   if (this != &that) {
     Drop();
     bpm_ = that.bpm_;
@@ -39,7 +39,7 @@ BasicPageGuard::~BasicPageGuard() { Drop(); }
 ReadPageGuard::ReadPageGuard(ReadPageGuard &&that) noexcept { guard_ = std::move(that.guard_); }
 
 auto ReadPageGuard::operator=(ReadPageGuard &&that) noexcept -> ReadPageGuard & {
-  std::cout << "ReadPageGuard move assignment operator\n";
+  // std::cout << "ReadPageGuard move assignment operator\n";
   if (this != &that) {
     guard_.Drop();
     guard_ = std::move(that.guard_);
