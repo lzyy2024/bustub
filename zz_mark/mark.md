@@ -109,10 +109,9 @@ local_depth: 通过与global_depth比较判断当前bucket的指针数量
 
 * Leaderboard Task：为 Optimizer 实现新的优化规则，包括 Hash Join、Join Reordering、Filter Push Down、Column Pruning 等等，让三条诡异的 sql 语句执行地越快越好。
 
-## task1
-### Parser 
+* Parser 
 一条 sql 语句，首先经过 Parser 生成一棵抽象语法树 AST。Bustub 中采用了 libpg_query 库将 sql 语句 parse 为 AST。
-### Binder
+* Binder
 在得到 AST 后，还需要将这些词语绑定到数据库实体上，这就是 Binder 的工作。例如有这样一条 sql：
 
 ```sql
@@ -121,3 +120,9 @@ SELECT colA FROM table1;
 
 其中 `SELECT` 和 `FROM` 是关键字，`colA` 和 `table1` 是标识符。Binder 遍历 AST，将这些词语绑定到相应的实体上。实体是 Bustub 可以理解的各种 c++ 类。绑定完成后，得到的结果是一棵 Bustub 可以直接理解的树。把它叫做 Bustub AST。
 
+## task1
+要掌握几个类 ：Catalog TableHeap
+
+### SeqScan
+
+12点31分
