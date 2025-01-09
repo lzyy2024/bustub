@@ -101,6 +101,9 @@ local_depth: 通过与global_depth比较判断当前bucket的指针数量
 
 # p3 2025.1.3 ~ 
 
+![alt text](image-1.png)
+此图可以贯穿p3所有类的关系
+
 * Task1：Access Method Executors. 包含 SeqScan、Insert、Delete、IndexScan 四个算子。
 
 * Task2：Aggregation and Join Executors. 包含 Aggregation、NestedLoopJoin、NestedIndexJoin 三个算子。
