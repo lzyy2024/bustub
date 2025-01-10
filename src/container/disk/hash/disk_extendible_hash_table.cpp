@@ -52,8 +52,8 @@ DiskExtendibleHashTable<K, V, KC>::DiskExtendibleHashTable(const std::string &na
  * SEARCH
  *****************************************************************************/
 template <typename K, typename V, typename KC>
-auto DiskExtendibleHashTable<K, V, KC>::GetValue(const K &key, std::vector<V> *result, Transaction *transaction) const
-    -> bool {
+auto DiskExtendibleHashTable<K, V, KC>::GetValue(const K &key, std::vector<V> *result,
+                                                 Transaction *transaction) const -> bool {
   ReadPageGuard header_page_r = bpm_->FetchPageRead(header_page_id_);
   auto header = reinterpret_cast<const ExtendibleHTableHeaderPage *>(header_page_r.GetData());
   uint32_t hash = Hash(key);
