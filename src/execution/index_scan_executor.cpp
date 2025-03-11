@@ -13,9 +13,7 @@
 
 namespace bustub {
 IndexScanExecutor::IndexScanExecutor(ExecutorContext *exec_ctx, const IndexScanPlanNode *plan)
-    : AbstractExecutor(exec_ctx), plan_(plan) {
-  std::cout << "?????\n";
-}
+    : AbstractExecutor(exec_ctx), plan_(plan) {}
 
 void IndexScanExecutor::Init() {
   auto table_info = exec_ctx_->GetCatalog()->GetTable(plan_->table_oid_);
@@ -24,9 +22,7 @@ void IndexScanExecutor::Init() {
   auto index_info = exec_ctx_->GetCatalog()->GetIndex(plan_->index_oid_);
   htable_ = dynamic_cast<HashTableIndexForTwoIntegerColumn *>(index_info->index_.get());
   auto table_schema = index_info->key_schema_;
-  auto key = plan_->pred_key_;
-  auto value = key->val_;
-  std::vector<Value> values{value};
+  std::vector<Value> values{plan_->pred_key_->val_};
   Tuple index_key(values, &table_schema);
   result_rids_.clear();
   htable_->ScanKey(index_key, &result_rids_, exec_ctx_->GetTransaction());

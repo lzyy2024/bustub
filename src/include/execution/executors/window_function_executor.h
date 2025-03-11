@@ -22,6 +22,49 @@
 
 namespace bustub {
 
+struct ValuesKey {
+  // 成员变量和函数
+  std::vector<Value> values_;
+
+  auto operator==(const ValuesKey &other) const -> bool {
+    if (values_.size() != other.values_.size()) {
+      return false;
+    }
+    for (uint32_t i = 0; i < other.values_.size(); i++) {
+      if (values_[i].CompareEquals(other.values_[i]) != CmpBool::CmpTrue) {
+        return false;
+      }
+    }
+    return true;
+  }
+};
+
+struct ValuesHash {
+  auto operator()(const ValuesKey &key) const -> std::size_t {
+    std::size_t curr_hash = 0;
+    for (const auto &value : key.values_) {
+      if (!value.IsNull()) {
+        curr_hash = HashUtil::CombineHashes(curr_hash, HashUtil::HashValue(&value));
+      }
+    }
+    return curr_hash;
+  }
+};
+
+struct ValuesKeyEqual {
+  auto operator()(const ValuesKey &lhs, const ValuesKey &rhs) const -> bool {
+    if (lhs.values_.size() != rhs.values_.size()) {
+      return false;
+    }
+    for (size_t i = 0; i < lhs.values_.size(); ++i) {
+      if (lhs.values_[i].CompareEquals(rhs.values_[i]) != CmpBool::CmpTrue) {
+        return false;
+      }
+    }
+    return true;
+  }
+};
+
 /**
  * The WindowFunctionExecutor executor executes a window function for columns using window function.
  *
@@ -90,5 +133,11 @@ class WindowFunctionExecutor : public AbstractExecutor {
 
   /** The child executor from which tuples are obtained */
   std::unique_ptr<AbstractExecutor> child_executor_;
+
+  std::vector<std::unordered_map<ValuesKey, Value, ValuesHash, ValuesKeyEqual>> partition_columns_;
+
+  std::vector<Tuple> ans_tuples_;
+
+  size_t ans_index_{0};
 };
 }  // namespace bustub
