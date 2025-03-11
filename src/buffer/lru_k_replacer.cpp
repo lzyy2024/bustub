@@ -82,26 +82,24 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id, AccessType access_type) {
   }
 
   std::lock_guard<std::mutex> guard(latch_);
-  current_timestamp_++;
   if (node_store_.count(frame_id) == 0) {
     LRUKNode node(k_, frame_id);
     node_store_.emplace(frame_id, node);
   }
-  auto &node = node_store_[frame_id];
 
-  auto flag = node.CheckEvictable();
-
-  // std::cout << node.GetLast() << ' ' << priority_evict_.count(node.GetLast()) << '\n';
-  if (flag) {
-    DeleteLast(frame_id);
-  }
-  // add new one
-  node.RecordAccess(current_timestamp_);
-  node.SetLast(node.GetDistance());
-  node.SetCnt(node.GetCnt() + 1);
-  // std::cout << node.GetLast() << ' ' << priority_evict_.count(node.GetLast()) << '\n';
-  if (flag) {
-    AddNewOne(frame_id);
+  if (access_type != AccessType::Scan) {
+    auto &node = node_store_[frame_id];
+    auto flag = node.CheckEvictable();
+    if (flag) {
+      DeleteLast(frame_id);
+    }
+    // add new one
+    node.RecordAccess(++current_timestamp_);
+    node.SetLast(node.GetDistance());
+    node.SetCnt(node.GetCnt() + 1); 
+    if (flag) {
+      AddNewOne(frame_id);
+    }
   }
 }
 
