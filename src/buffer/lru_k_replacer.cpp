@@ -96,7 +96,7 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id, AccessType access_type) {
     // add new one
     node.RecordAccess(++current_timestamp_);
     node.SetLast(node.GetDistance());
-    node.SetCnt(node.GetCnt() + 1); 
+    node.SetCnt(node.GetCnt() + 1);
     if (flag) {
       AddNewOne(frame_id);
     }
