@@ -274,16 +274,21 @@ auto BufferPoolManager::NewPageGuarded(page_id_t *page_id) -> BasicPageGuard {
   // std::cout << "NewPageGuarded:\n";
   Page *page;
   frame_id_t frame_id = -1;
-  std::scoped_lock lock(latch_);
-  if (!free_list_.empty()) {
-    frame_id = free_list_.back();
-    free_list_.pop_back();
-  } else {
-    if (!replacer_->Evict(&frame_id)) {
-      return {nullptr, nullptr};
+  {
+    std::scoped_lock lock(latch_);
+    if (!free_list_.empty()) {
+      frame_id = free_list_.back();
+      free_list_.pop_back();
+    } else {
+      if (!replacer_->Evict(&frame_id)) {
+        return {nullptr, nullptr};
+      }
     }
+    page = pages_ + frame_id;
+    page_table_.erase(page->GetPageId());
+    *page_id = AllocatePage();
+    page_table_.emplace(*page_id, frame_id);
   }
-  page = pages_ + frame_id;
   if (page->is_dirty_) {
     auto promise = disk_scheduler_->CreatePromise();
     auto future = promise.get_future();
@@ -291,10 +296,7 @@ auto BufferPoolManager::NewPageGuarded(page_id_t *page_id) -> BasicPageGuard {
     future.get();
     page->is_dirty_ = false;
   }
-  *page_id = AllocatePage();
   // std::cout << *page_id << '\n';
-  page_table_.erase(page->GetPageId());
-  page_table_.emplace(*page_id, frame_id);
   page->page_id_ = *page_id;
   page->pin_count_ = 1;
   page->ResetMemory();
