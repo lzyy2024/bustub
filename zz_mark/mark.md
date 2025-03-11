@@ -129,3 +129,9 @@ SELECT colA FROM table1;
 ### SeqScan
 
 12点31分
+
+
+# p1优化
+## LRU-k
+将两个map改为deque, 因为每次只取逻辑时间最近的, 然后push也是按逻辑时间
+再存一个unordered_map<逻辑时间, frame_id> 表示链表中是不是最后一个该frame_id的记录

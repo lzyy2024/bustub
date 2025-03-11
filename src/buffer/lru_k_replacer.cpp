@@ -123,16 +123,6 @@ void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
     AddNewOne(frame_id);
   }
   node.SetEvictable(set_evictable);
-
-  // if (node.CheckEvictable()) {
-  //   DeleteLast(frame_id);
-  // }
-  // node_store_[frame_id].SetEvictable(set_evictable);
-  // //   curr_size_ += ret;
-  // if (node.CheckEvictable()) {
-  //   AddNewOne(frame_id);
-  // }
-  // node.SetEvictable(set_evictable);
 }
 
 void LRUKReplacer::Remove(frame_id_t frame_id) {
