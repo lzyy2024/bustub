@@ -15,7 +15,7 @@
 #include <limits>
 #include <list>
 #include <map>
-#include <mutex>  // NOLINT
+#include <shared_mutex>  // 替换 <mutex>
 #include <unordered_map>
 #include <vector>
 
@@ -27,21 +27,13 @@ namespace bustub {
 
 enum class AccessType { Unknown = 0, Lookup, Scan, Index };
 
-class LRUKNode {
- public:
+struct LRUKNode {
   LRUKNode() : k_(-1), fid_(-1) {}
   LRUKNode(size_t k, frame_id_t fid) : k_(k), fid_(fid) {}
   auto RecordAccess(size_t current_timestamp_) -> size_t;
   void SetEvictable(bool set_evictable_);  // return
-  auto CheckEvictable() -> bool;
   auto GetDistance() -> size_t;
   void Erase();
-  auto GetCnt() -> size_t;
-  auto GetLast() -> size_t;
-  void SetCnt(size_t cnt);
-  void SetLast(size_t last);
-
- private:
   /** History of last seen K timestamps of this page. Least recent timestamp stored in front. */
   // Remove maybe_unused if you start using them. Feel free to change the member variables as you want.
   // history_.front() is early
@@ -178,7 +170,7 @@ class LRUKReplacer {
   size_t curr_size_{0};
   [[maybe_unused]] size_t replacer_size_;
   size_t k_;
-  std::mutex latch_;
+  std::shared_mutex latch_;  // 替换 std::mutex
 };
 
 }  // namespace bustub

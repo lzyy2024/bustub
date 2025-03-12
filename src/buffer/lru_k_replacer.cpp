@@ -11,6 +11,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "buffer/lru_k_replacer.h"
+#include <mutex>
 #include "common/exception.h"
 namespace bustub {
 
@@ -20,7 +21,7 @@ LRUKReplacer::LRUKReplacer(size_t num_frames, size_t k) : replacer_size_(num_fra
 
 auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
   // std::cout << "lru_replacer.Evict( ";
-  std::lock_guard<std::mutex> lock(latch_);
+  std::unique_lock<std::shared_mutex> lock(latch_);
 
   if (!ppriority_evict_.empty()) {
     auto [time, id] = *ppriority_evict_.begin();
@@ -48,23 +49,21 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
 void LRUKReplacer::DeleteLast(size_t frame_id) {
   // delete last
   auto node = node_store_[frame_id];
-  size_t last = node.GetLast();
-  size_t count = node.GetCnt();
+  size_t last = node.last_;
+  size_t count = node.cnt_;
   if (last != 0) {
     if (count < k_) {
-      auto it = ppriority_evict_.find(last);
-      ppriority_evict_.erase(it);
+      ppriority_evict_.erase(last);
     } else {
-      auto it = priority_evict_.find(last);
-      priority_evict_.erase(it);
+      priority_evict_.erase(last);
     }
   }
 };
 
 void LRUKReplacer::AddNewOne(size_t frame_id) {
   auto node = node_store_[frame_id];
-  size_t last = node.GetLast();
-  size_t count = node.GetCnt();
+  size_t last = node.last_;
+  size_t count = node.cnt_;
   if (last != 0) {
     if (count < k_) {
       ppriority_evict_[last] = frame_id;
@@ -81,7 +80,7 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id, AccessType access_type) {
     throw Exception("LRUKReplacer::RecordAccess: frame_id is invalid");
   }
 
-  std::lock_guard<std::mutex> guard(latch_);
+  std::unique_lock<std::shared_mutex> guard(latch_);
   if (node_store_.count(frame_id) == 0) {
     LRUKNode node(k_, frame_id);
     node_store_.emplace(frame_id, node);
@@ -89,14 +88,14 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id, AccessType access_type) {
 
   if (access_type != AccessType::Scan) {
     auto &node = node_store_[frame_id];
-    auto flag = node.CheckEvictable();
+    auto flag = node.is_evictable_;
     if (flag) {
       DeleteLast(frame_id);
     }
     // add new one
     node.RecordAccess(++current_timestamp_);
-    node.SetLast(node.GetDistance());
-    node.SetCnt(node.GetCnt() + 1);
+    node.last_ = node.GetDistance();
+    node.cnt_ = node.cnt_ + 1;
     if (flag) {
       AddNewOne(frame_id);
     }
@@ -105,13 +104,13 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id, AccessType access_type) {
 
 void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
   // std::cout << "lru_replacer.SetEvictable(" << frame_id << ' ' << set_evictable << " );\n";
-  std::lock_guard<std::mutex> guard(latch_);
+  std::unique_lock<std::shared_mutex> guard(latch_);
   if (0U == node_store_.count(frame_id)) {
     return;
   }
 
   auto &node = node_store_[frame_id];
-  if (node.CheckEvictable() == set_evictable) {
+  if (node.is_evictable_ == set_evictable) {
     return;
   }
 
@@ -125,12 +124,12 @@ void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
 
 void LRUKReplacer::Remove(frame_id_t frame_id) {
   // std::cout << "Remove" << ' ' << frame_id << '\n';
-  std::lock_guard<std::mutex> guard(latch_);
+  std::unique_lock<std::shared_mutex> guard(latch_);
   if (node_store_.count(frame_id) == 0U) {
     return;
   }
   auto node = node_store_[frame_id];
-  if (!node.CheckEvictable()) {
+  if (!node.is_evictable_) {
     throw Exception("LRUKReplacer::Remove: frame_id can not be remove");
   }
   DeleteLast(frame_id);
@@ -139,6 +138,7 @@ void LRUKReplacer::Remove(frame_id_t frame_id) {
 }
 
 auto LRUKReplacer::Size() -> size_t {
+  std::shared_lock<std::shared_mutex> lock(latch_);
   curr_size_ = ppriority_evict_.size() + priority_evict_.size();
   // std::cout << "size():" << ppriority_evict_.size() << ' ' << priority_evict_.size() << '\n';
   // printf("lru_replacer.Size(): %ld\n", curr_size_);
@@ -165,9 +165,3 @@ void bustub::LRUKNode::Erase() {
   history_.clear();
   SetEvictable(false);
 }
-
-auto bustub::LRUKNode::GetCnt() -> size_t { return cnt_; }
-auto bustub::LRUKNode::GetLast() -> size_t { return last_; }
-void bustub::LRUKNode::SetLast(size_t last) { last_ = last; }
-void bustub::LRUKNode::SetCnt(size_t cnt) { cnt_ = cnt; }
-auto bustub::LRUKNode::CheckEvictable() -> bool { return is_evictable_; }
